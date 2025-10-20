@@ -3,26 +3,40 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sneaker Identifier</title>
-    <link rel="stylesheet" href="style.css" />
+    <title>👟 Sneaker Identifier</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
     <div class="container">
-        <h1 class="title">Sneaker Identifier</h1>
-        <p class="subtitle">Upload your sneaker photo to identify it instantly</p>
+        <header>
+            <h1>👟 Sneaker Identifier</h1>
+            <p>Upload your sneaker photo to identify it instantly</p>
+        </header>
 
-        <div class="upload-box" id="uploadBox">
-            <input type="file" id="fileInput" accept="image/*" hidden>
-            <button id="uploadBtn">Upload Sneaker Photo</button>
-        </div>
+        <main>
+            <!-- Upload Section -->
+            <div class="upload-box" id="uploadBox">
+                <input type="file" id="fileInput" accept="image/*" hidden>
+                <button id="uploadBtn">Upload Sneaker Photo</button>
+                <p class="hint-text">or drag & drop your image here</p>
+            </div>
 
-        <p class="hint-text">Drag & drop your file here or click the button above</p>
+            <!-- Image Preview -->
+            <div class="preview" id="previewArea" style="display: none;">
+                <img id="previewImage" alt="Sneaker Preview">
+                <button id="identifyBtn">Identify Sneaker</button>
+            </div>
 
-        <div class="preview-area" id="previewArea" style="display:none;">
-            <h3 class="preview-title">Preview</h3>
-            <img id="previewImage" alt="Sneaker Preview">
-        </div>
+            <!-- Loader -->
+            <div id="loader" class="loader" style="display: none;"></div>
+
+            <!-- Result -->
+            <div id="resultSection" class="result" style="display: none;">
+                <h2>Result</h2>
+                <p id="sneakerName">Nike Air Jordan 1 Retro</p>
+            </div>
+        </main>
     </div>
 
     <script>
@@ -31,6 +45,9 @@
         const fileInput = document.getElementById('fileInput');
         const previewArea = document.getElementById('previewArea');
         const previewImage = document.getElementById('previewImage');
+        const identifyBtn = document.getElementById('identifyBtn');
+        const loader = document.getElementById('loader');
+        const resultSection = document.getElementById('resultSection');
 
         uploadBtn.addEventListener('click', () => fileInput.click());
 
@@ -39,9 +56,7 @@
             uploadBox.classList.add('drag-over');
         });
 
-        uploadBox.addEventListener('dragleave', () => {
-            uploadBox.classList.remove('drag-over');
-        });
+        uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('drag-over'));
 
         uploadBox.addEventListener('drop', (e) => {
             e.preventDefault();
@@ -50,10 +65,7 @@
             handleFile(file);
         });
 
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            handleFile(file);
-        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
 
         function handleFile(file) {
             if (!file) return;
@@ -61,14 +73,25 @@
                 alert("Please upload an image file.");
                 return;
             }
-
             const reader = new FileReader();
             reader.onload = (e) => {
                 previewImage.src = e.target.result;
                 previewArea.style.display = "block";
+                resultSection.style.display = "none";
             };
             reader.readAsDataURL(file);
         }
+
+        identifyBtn.addEventListener('click', () => {
+            loader.style.display = "block";
+            identifyBtn.disabled = true;
+            resultSection.style.display = "none";
+            setTimeout(() => {
+                loader.style.display = "none";
+                resultSection.style.display = "block";
+                identifyBtn.disabled = false;
+            }, 2000); // simulate AI response
+        });
     </script>
 </body>
 </html>
