@@ -1,4 +1,4 @@
-# gemini_client.py - FINAL ROBUST VERSION
+# gemini_client.py - FINAL, DEFINITIVE VERSION
 
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part, Image
@@ -8,19 +8,20 @@ SYSTEM_PROMPT = """You are a sneaker recognition expert. From the image, identif
 
 def identify_sneaker(project_id: str, location: str, image_bytes: bytes):
     """
-    Identifies a sneaker using the Vertex AI SDK, with added safety checks.
+    Identifies a sneaker using the Vertex AI SDK with the most stable model.
     """
     try:
         # Initialize the Vertex AI client
         vertexai.init(project=project_id, location=location)
         
         # Load the model
+        # THIS IS THE FINAL, CORRECTED MODEL NAME
         model = GenerativeModel(
-            "gemini-1.5-pro-001",
+            "gemini-1.0-pro-vision", 
             system_instruction=[SYSTEM_PROMPT]
         )
         
-        # Load the image data
+        # Load the image data for the model
         image = Image.from_bytes(image_bytes)
         
         # Prepare the prompt
@@ -32,21 +33,13 @@ def identify_sneaker(project_id: str, location: str, image_bytes: bytes):
         # Generate the content
         response = model.generate_content(prompt_parts)
         
-        # --- ROBUSTNESS CHECKS ADDED ---
-        # 1. Check if the response has any 'candidates' (answers) at all.
-        if not response.candidates:
-            print("Error: The AI response contained no candidates.")
+        # Robustness checks
+        if not response.candidates or not response.candidates[0].content.parts:
+            print("Error: The AI response was empty or malformed.")
             return None
-
-        # 2. Check if the first candidate has any 'parts' (content).
-        first_candidate = response.candidates[0]
-        if not first_candidate.content.parts:
-            print("Error: The first candidate had no content parts.")
-            return None
-        # --- END OF CHECKS ---
 
         # Extract and parse the JSON response safely
-        json_text = first_candidate.content.parts[0].text.strip()
+        json_text = response.candidates[0].content.parts[0].text.strip()
         sneaker_data = json.loads(json_text)
         
         return sneaker_data
