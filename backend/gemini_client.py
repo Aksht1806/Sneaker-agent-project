@@ -1,4 +1,4 @@
-# gemini_client.py - FINAL VERSION using Vertex AI SDK
+# gemini_client.py - FINAL ROBUST VERSION
 
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part, Image
@@ -8,7 +8,7 @@ SYSTEM_PROMPT = """You are a sneaker recognition expert. From the image, identif
 
 def identify_sneaker(project_id: str, location: str, image_bytes: bytes):
     """
-    Identifies a sneaker using the Vertex AI SDK, which is more robust.
+    Identifies a sneaker using the Vertex AI SDK, with added safety checks.
     """
     try:
         # Initialize the Vertex AI client
@@ -16,11 +16,11 @@ def identify_sneaker(project_id: str, location: str, image_bytes: bytes):
         
         # Load the model
         model = GenerativeModel(
-            "gemini-1.5-pro-001", # A specific, stable version of the model
+            "gemini-1.5-pro-001",
             system_instruction=[SYSTEM_PROMPT]
         )
         
-        # Load the image data for the model
+        # Load the image data
         image = Image.from_bytes(image_bytes)
         
         # Prepare the prompt
@@ -32,8 +32,21 @@ def identify_sneaker(project_id: str, location: str, image_bytes: bytes):
         # Generate the content
         response = model.generate_content(prompt_parts)
         
-        # Extract and parse the JSON response
-        json_text = response.text.strip()
+        # --- ROBUSTNESS CHECKS ADDED ---
+        # 1. Check if the response has any 'candidates' (answers) at all.
+        if not response.candidates:
+            print("Error: The AI response contained no candidates.")
+            return None
+
+        # 2. Check if the first candidate has any 'parts' (content).
+        first_candidate = response.candidates[0]
+        if not first_candidate.content.parts:
+            print("Error: The first candidate had no content parts.")
+            return None
+        # --- END OF CHECKS ---
+
+        # Extract and parse the JSON response safely
+        json_text = first_candidate.content.parts[0].text.strip()
         sneaker_data = json.loads(json_text)
         
         return sneaker_data
