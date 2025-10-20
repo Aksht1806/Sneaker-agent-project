@@ -70,7 +70,6 @@ function resetUI() {
 async function identifyAndAnalyze() {
     if (!file) { showError("No image selected."); return; }
 
-    // --- Show loading state ---
     uploadSection.classList.add('hidden');
     resultsSection.classList.remove('hidden');
     loaderContainer.classList.remove('hidden');
@@ -81,7 +80,7 @@ async function identifyAndAnalyze() {
     try {
         const base64Image = await fileToBase64(file);
 
-        // --- Make API call to the backend ---
+        // THIS IS THE REAL API CALL
         const response = await fetch(`${API_BASE_URL}/api/analyze`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -95,22 +94,16 @@ async function identifyAndAnalyze() {
 
         const data = await response.json();
         
-        // --- Populate UI with data from backend ---
         progressText.textContent = 'Analysis complete!';
         
-        // Sneaker Info
         const { sneaker_info, price_listings, price_history } = data;
-        sneakerNameEl.textContent = sneaker_info.name;
+        sneakerNameEl.textContent = sneaker_info.name; // This now comes from the AI
         sneakerSkuEl.textContent = `Style Code: ${sneaker_info.style_code}`;
         resultImage.src = URL.createObjectURL(file);
 
-        // Price Listings
         displayPriceListings(price_listings);
-        
-        // Price Chart
         displayPriceChart(price_history);
         
-        // --- Show final results ---
         loaderContainer.classList.add('hidden');
         resultContent.classList.remove('hidden');
 
@@ -121,72 +114,14 @@ async function identifyAndAnalyze() {
     }
 }
 
-// --- Display Functions ---
-function displayPriceListings(listings) {
-    priceListings.innerHTML = ''; // Clear previous results
-    if (!listings || listings.length === 0) {
-        priceListings.innerHTML = '<p>No price listings found.</p>';
-        return;
-    }
-    
-    listings.forEach(source => {
-        const listingEl = document.createElement('div');
-        listingEl.className = 'flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700';
-        listingEl.innerHTML = `
-            <div class="flex items-center gap-4">
-                <img src="${source.logo}" alt="${source.name} logo" class="w-8 h-8 rounded-full">
-                <div>
-                    <p class="font-semibold text-lg">${source.name}</p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">${source.condition} - Size ${source.size}</p>
-                </div>
-            </div>
-            <div class="text-right">
-                <p class="text-xl font-bold text-green-600 dark:text-green-400">$${source.price.toFixed(2)}</p>
-            </div>
-        `;
-        priceListings.appendChild(listingEl);
-    });
-}
+function displayPriceListings(listings) { /* ... same as before ... */ }
+function displayPriceChart(history) { /* ... same as before ... */ }
 
-function displayPriceChart(history) {
-    if(priceChart) { priceChart.destroy(); }
-    
-    priceChart = new Chart(priceChartCanvas, {
-        type: 'line',
-        data: {
-            labels: history.labels,
-            datasets: [{
-                label: 'Average Sale Price',
-                data: history.data,
-                borderColor: 'rgb(59, 130, 246)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                fill: true,
-                tension: 0.4,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: {
-                    ticks: {
-                        maxRotation: 0,
-                        autoSkip: true,
-                        maxTicksLimit: 8 // Show fewer labels on the x-axis for readability
-                    }
-                },
-                y: { ticks: { callback: value => '$' + value } }
-            }
-        }
-    });
-}
-
-// --- Helper Functions ---
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onload = () => resolve(reader.result); // Keep the prefix for fetch
         reader.onerror = error => reject(error);
     });
 }
@@ -200,5 +135,25 @@ function showError(message) {
     errorText.textContent = message;
 }
 
-// --- Initial State ---
 identifyBtn.disabled = true;
+// Make sure to include the full displayPriceListings and displayPriceChart functions
+function displayPriceListings(listings) {
+    priceListings.innerHTML = '';
+    if (!listings || listings.length === 0) {
+        priceListings.innerHTML = '<p>No price listings found.</p>';
+        return;
+    }
+    listings.forEach(source => {
+        const listingEl = document.createElement('div');
+        listingEl.className = 'flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700';
+        listingEl.innerHTML = `<div class="flex items-center gap-4"><img src="${source.logo}" alt="${source.name} logo" class="w-8 h-8 rounded-full"><div><p class="font-semibold text-lg">${source.name}</p><p class="text-sm text-gray-500 dark:text-gray-400">${source.condition} - Size ${source.size}</p></div></div><div class="text-right"><p class="text-xl font-bold text-green-600 dark:text-green-400">$${source.price.toFixed(2)}</p></div>`;
+        priceListings.appendChild(listingEl);
+    });
+}
+function displayPriceChart(history) {
+    if(priceChart) { priceChart.destroy(); }
+    priceChart = new Chart(priceChartCanvas, {
+        type: 'line', data: { labels: history.labels, datasets: [{ label: 'Average Sale Price', data: history.data, borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4, }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } }, y: { ticks: { callback: value => '$' + value } } } }
+    });
+}
