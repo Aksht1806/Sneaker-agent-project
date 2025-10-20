@@ -1,15 +1,11 @@
 // --- CONFIGURATION ---
-// IMPORTANT: You will replace this placeholder with your actual Render backend URL after you deploy it.
-const API_BASE_URL = 'https://sneaker-agent-project.onrender.com';
+// IMPORTANT: Replace this placeholder with your actual Render backend URL.
+const API_BASE_URL = 'https://sneaker-agent-project.onrender.com'; // Example URL
 
 // --- DOM Elements ---
 const imageDropArea = document.getElementById('image-drop-area');
 const imageUpload = document.getElementById('image-upload');
 const identifyBtn = document.getElementById('identify-btn');
-// ... (the rest of your script.js file is exactly the same as before) ...
-// ... (no other changes are needed in this file) ...
-
-// --- The rest of your script.js code goes here ---
 const imagePreviewContainer = document.getElementById('image-preview-container');
 const imagePreview = document.getElementById('image-preview');
 const uploadPrompt = document.getElementById('upload-prompt');
@@ -190,7 +186,7 @@ function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
         reader.onerror = error => reject(error);
     });
 }
