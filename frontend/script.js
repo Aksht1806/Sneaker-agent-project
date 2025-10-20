@@ -1,6 +1,6 @@
 // --- CONFIGURATION ---
 // IMPORTANT: You will replace this placeholder with your actual Render backend URL after you deploy it.
-const API_BASE_URL = 'https://your-backend-name.onrender.com';
+const API_BASE_URL = 'https://sneaker-agent-project.onrender.com';
 
 // --- DOM Elements ---
 const imageDropArea = document.getElementById('image-drop-area');
