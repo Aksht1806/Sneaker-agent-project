@@ -1,4 +1,4 @@
-# main.py - FINAL VERSION using Vertex AI SDK
+# main.py - FINAL ROBUST VERSION
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -9,16 +9,9 @@ from io import BytesIO
 from PIL import Image
 import os
 
-# --- ACTION REQUIRED ---
-# Find your Project ID in the Google Cloud Console and paste it here.
-# It usually looks like 'gen-ai-project-123456' or similar.
-# Make sure this is the same project you initialized with 'gcloud init'.
+# Your Project ID should already be here.
 GCP_PROJECT_ID = "gen-lang-client-0524943717"
-GCP_PROJECT_LOCATION = "us-central1" # You can leave this as is.
-# --- END ACTION ---
-
-if "PASTE_YOUR_GCP_PROJECT_ID_HERE" in GCP_PROJECT_ID:
-    raise ValueError("Please replace 'PASTE_YOUR_GCP_PROJECT_ID_HERE' with your actual GCP Project ID in main.py")
+GCP_PROJECT_LOCATION = "us-central1"
 
 app = Flask(__name__)
 CORS(app)
@@ -32,15 +25,22 @@ def analyze_sneaker():
         base64_data = request.json['image'].split(',')[1]
         image_bytes = base64.b64decode(base64_data)
         
+        # Call the gemini client to get sneaker data
         sneaker_data = gemini_client.identify_sneaker(
             project_id=GCP_PROJECT_ID,
             location=GCP_PROJECT_LOCATION,
             image_bytes=image_bytes
         )
         
-        if not sneaker_data:
-            return jsonify({'error': 'Could not identify the sneaker from the image.'}), 500
+        # --- FINAL ROBUSTNESS CHECK ADDED ---
+        # If the gemini_client returned None (meaning the AI failed),
+        # stop here and send a professional error message to the frontend.
+        if sneaker_data is None:
+            print("Main.py: identify_sneaker returned None. Sending error to frontend.")
+            return jsonify({'error': 'The AI could not identify this sneaker. Please try a clearer image.'}), 500
+        # --- END OF CHECK ---
 
+        # The code below will ONLY run if sneaker_data is valid.
         price_listings = scraper.get_mock_price_listings()
         price_history = scraper.get_mock_price_history()
 
@@ -55,6 +55,3 @@ def analyze_sneaker():
     except Exception as e:
         print(f"An unexpected error occurred in main.py: {e}")
         return jsonify({'error': 'An internal server error occurred.'}), 500
-
-# NOTE: The if __name__ == '__main__': block has been removed for production.
-# Gunicorn will be used to run the 'app' object directly.
